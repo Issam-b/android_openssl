@@ -24,6 +24,12 @@ ssl_versions=("1.1.1u" "3.1.1")
 architectures=("arm64" "arm" "x86_64" "x86")
 build_types=('' 'no-asm')
 
+if [[ "$(uname)" == "Darwin" ]]; then
+    CPU_CORES=$(sysctl -n hw.ncpu)
+else
+    CPU_CORES=$(nproc)
+fi
+
 get_qt_arch() {
     # takes OpenSSL arch as argument
     case $1 in
@@ -166,7 +172,7 @@ build_ssl() {
     log_file=$1
 
     echo "Building..."
-    make -j$(nproc) SHLIB_VERSION_NUMBER= build_libs 2>&1 1>>${log_file} \
+    make -j$CPU_CORES SHLIB_VERSION_NUMBER= build_libs 2>&1 1>>${log_file} \
         | tee -a ${log_file} || exit 1
 }
 
@@ -232,7 +238,7 @@ for build_type in "${build_types[@]}"; do
             build_ssl ${log_file}
             strip_libs
             copy_build_artefacts ${output_dir}
-            
+
 
             popd
         done
